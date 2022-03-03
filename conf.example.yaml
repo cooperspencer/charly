@@ -1,0 +1,24 @@
+configuration:
+  cron: # cron to run charly. if this option is empty, it will run just once
+  db-file: # the database file, default: charly.db
+
+github:
+  token: # github token
+  repos:
+    - user: # owner of the repository
+      repo: # the repositories' name
+      token: # if you need a different token than the global one
+      branch: # if you want to monitor a
+      working-dir: # where to run your script
+      script: # add your script here. if it has more lines use |+
+
+gitlab:
+  url: # default url for gitlab. if not set, the official gitlab instance is used
+  token: # gitlab token
+  repos:
+    - id: # the id of the project
+      repo: # the repositories' name. if not set, it uses the id as name
+      token: # if you need a different token than the global one
+      branch: # if you want to monitor a
+      working-dir: # where to run your script
+      script: # add your script here. if it has more lines use |+
