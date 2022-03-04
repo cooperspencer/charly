@@ -2,8 +2,10 @@ package main
 
 import (
 	"charly/db"
+	"charly/gitea"
 	"charly/github"
 	"charly/gitlab"
+	"charly/gogs"
 	"charly/scripts"
 	"charly/types"
 	"fmt"
@@ -44,6 +46,18 @@ func dorepo(repo types.Repos, token, vcs string) {
 		r = re
 	case "gitlab":
 		re, err := gitlab.GetRepo(repo.Branch, repo.Token, repo.URL, repo.ID)
+		if err != nil {
+			log.Fatal().Str("vcs", vcs).Str("branch", repo.Branch).Err(err)
+		}
+		r = re
+	case "gitea":
+		re, err := gitea.GetRepo(repo.User, repo.Repo, repo.Branch, repo.Token, repo.URL)
+		if err != nil {
+			log.Fatal().Str("vcs", vcs).Str("branch", repo.Branch).Err(err)
+		}
+		r = re
+	case "gogs":
+		re, err := gogs.GetRepo(repo.User, repo.Repo, repo.Branch, repo.Token, repo.URL)
 		if err != nil {
 			log.Fatal().Str("vcs", vcs).Str("branch", repo.Branch).Err(err)
 		}
@@ -133,7 +147,9 @@ func main() {
 
 		c.AddFunc(config.Configuration.Cron, func() {
 			RunRepos(config)
+			logNextRun(&config)
 		})
+		c.Start()
 		PlaysForever()
 	} else {
 		RunRepos(config)
@@ -152,5 +168,14 @@ func RunRepos(config types.Config) {
 			repo.Repo = fmt.Sprintf("ID %d", repo.ID)
 		}
 		dorepo(repo, config.Gitlab.Token, "gitlab")
+	}
+	for _, repo := range config.Gitea.Repos {
+		if repo.URL == "" {
+			repo.URL = config.Gitea.URL
+		}
+		dorepo(repo, config.Gitea.Token, "gitea")
+	}
+	for _, repo := range config.Gogs.Repos {
+		dorepo(repo, config.Gogs.Token, "gogs")
 	}
 }

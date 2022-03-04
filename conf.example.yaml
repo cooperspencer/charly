@@ -11,6 +11,7 @@ github:
       branch: # if you want to monitor a
       working-dir: # where to run your script
       script: # add your script here. if it has more lines use |+
+      variables: # you can set additional variables for the script
 
 gitlab:
   url: # default url for gitlab. if not set, the official gitlab instance is used
@@ -22,3 +23,28 @@ gitlab:
       branch: # if you want to monitor a
       working-dir: # where to run your script
       script: # add your script here. if it has more lines use |+
+      variables: # you can set additional variables for the script
+
+gitea:
+  url: # default url for gitea. if not set, the official gitlab instance is used
+  token: # gitea token
+  repos:
+    - user: # owner of the repository
+      repo: # the repositories' name
+      token: # if you need a different token than the global one
+      branch: # if you want to monitor a
+      working-dir: # where to run your script
+      script: # add your script here. if it has more lines use |+
+      variables: # you can set additional variables for the script
+
+gogs:
+  url: # default url for gogs.
+  token: # gogs token
+  repos:
+    - user: # owner of the repository
+      repo: # the repositories' name
+      token: # if you need a different token than the global one
+      branch: # if you want to monitor a
+      working-dir: # where to run your script
+      script: # add your script here. if it has more lines use |+
+      variables: # you can set additional variables for the script

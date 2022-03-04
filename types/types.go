@@ -27,6 +27,8 @@ type Config struct {
 	} `yaml:"configuration"`
 	Github VCS `yaml:"github"`
 	Gitlab VCS `yaml:"gitlab"`
+	Gitea  VCS `yaml:"gitea"`
+	Gogs   VCS `yaml:"gogs"`
 }
 
 type Repos struct {
