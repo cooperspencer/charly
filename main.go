@@ -2,15 +2,13 @@ package main
 
 import (
 	"charly/db"
-	"charly/gitea"
-	"charly/github"
-	"charly/gitlab"
-	"charly/gogs"
+	"charly/git"
 	"charly/scripts"
 	"charly/types"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
@@ -26,66 +24,73 @@ var (
 	version    = "0.0.1"
 )
 
-func dorepo(repo types.Repos, token, vcs string) {
-	if repo.Token == "" {
-		repo.Token = token
-	}
-	log.Debug().Str("vcs", vcs).Msg(fmt.Sprint(repo))
-
-	if repo.WorkingDir == "" {
-		repo.WorkingDir = exPath
-	}
-	log.Info().Str("vcs", vcs).Msgf("checking %s...", repo.Repo)
-	r := types.Repo{}
-	switch vcs {
-	case "github":
-		re, err := github.GetRepo(repo.User, repo.Repo, repo.Branch, repo.Token)
-		if err != nil {
-			log.Fatal().Str("vcs", vcs).Str("branch", repo.Branch).Err(err)
-		}
-		r = re
-	case "gitlab":
-		re, err := gitlab.GetRepo(repo.Branch, repo.Token, repo.URL, repo.ID)
-		if err != nil {
-			log.Fatal().Str("vcs", vcs).Str("branch", repo.Branch).Err(err)
-		}
-		r = re
-	case "gitea":
-		re, err := gitea.GetRepo(repo.User, repo.Repo, repo.Branch, repo.Token, repo.URL)
-		if err != nil {
-			log.Fatal().Str("vcs", vcs).Str("branch", repo.Branch).Err(err)
-		}
-		r = re
-	case "gogs":
-		re, err := gogs.GetRepo(repo.User, repo.Repo, repo.Branch, repo.Token, repo.URL)
-		if err != nil {
-			log.Fatal().Str("vcs", vcs).Str("branch", repo.Branch).Err(err)
-		}
-		r = re
-	}
-
-	log.Debug().Str(vcs, vcs).Msg(fmt.Sprint(r))
-	dbrepo, err := d.GetRepo(r)
-	if err != nil {
-		if err.Error() == "repos bucket doesn't exist" {
-			log.Debug().Str("vcs", vcs).Str("branch", r.Branch).Err(err)
+func getName(location string) string {
+	if f, err := os.Stat(location); !os.IsNotExist(err) {
+		return f.Name()
+	} else {
+		lastelement := location[strings.LastIndex(location, "/")+1:]
+		if strings.HasSuffix(lastelement, ".git") {
+			return lastelement[:strings.LastIndex(lastelement, ".git")]
 		} else {
-			log.Fatal().Str("vcs", vcs).Str("branch", r.Branch).Err(err)
+			return lastelement
 		}
 	}
+}
 
-	if dbrepo.Commit != r.Commit {
-		log.Info().Str("vcs", vcs).Str("branch", r.Branch).Msgf("%s was updated", r.Name)
-		if repo.Script != "" {
-			log.Info().Str("vcs", vcs).Str("branch", r.Branch).Msgf("run script for %s", r.Name)
-			err = scripts.RunScript(r, repo)
-			if err != nil {
-				log.Fatal().Str("vcs", vcs).Str("branch", r.Branch).Err(err)
+func dorepo(repo types.Repos) {
+	log.Info().Str("url", repo.URL).Msg("checking for updates...")
+	re := types.Repo{}
+	data, err := git.GetRepo(repo)
+	if err != nil {
+		log.Error().Str("url", repo.URL).Msg(err.Error())
+		return
+	}
+	if repo.Branch == "" {
+		log.Info().Str("url", repo.URL).Msg("checking for default branch...")
+		for _, d := range data {
+			if d.Hash().IsZero() {
+				repo.Branch = d.Target().Short()
+				log.Debug().Str("url", repo.URL).Msgf("default branch is %s...", repo.Branch)
+				break
 			}
 		}
-		err = d.InsertRepo(r)
+	}
+	log.Debug().Str("url", repo.URL).Str("branch", repo.Branch).Msg("gathering info for the repo...")
+	for _, d := range data {
+		if d.Name().Short() == repo.Branch {
+			re = types.Repo{
+				ID:     0,
+				Name:   getName(repo.URL),
+				Url:    repo.URL,
+				User:   repo.Auth.Username,
+				Branch: d.Name().Short(),
+				Commit: d.Hash().String(),
+			}
+			log.Debug().Str("url", repo.URL).Str("branch", repo.Branch).Msg(fmt.Sprint(re))
+			break
+		}
+	}
+	dbrepo, err := d.GetRepo(re)
+	if err != nil {
+		if err.Error() == "repos bucket doesn't exist" {
+			log.Debug().Str("branch", re.Branch).Err(err)
+		} else {
+			log.Fatal().Str("branch", re.Branch).Err(err)
+		}
+	}
+
+	if dbrepo.Commit != re.Commit {
+		log.Info().Str("branch", re.Branch).Msgf("%s was updated", re.Name)
+		if repo.Script != "" {
+			log.Info().Str("branch", re.Branch).Msgf("run script for %s", re.Name)
+			err = scripts.RunScript(re, repo)
+			if err != nil {
+				log.Fatal().Str("branch", re.Branch).Err(err)
+			}
+		}
+		err = d.InsertRepo(re)
 		if err != nil {
-			log.Fatal().Str("vcs", vcs).Str("branch", r.Branch).Err(err)
+			log.Fatal().Str("branch", re.Branch).Err(err)
 		}
 	}
 }
@@ -157,25 +162,14 @@ func main() {
 }
 
 func RunRepos(config types.Config) {
-	for _, repo := range config.Github.Repos {
-		dorepo(repo, config.Github.Token, "github")
-	}
-	for _, repo := range config.Gitlab.Repos {
-		if repo.URL == "" {
-			repo.URL = config.Gitlab.URL
+	for vcs, repos := range config.VCSRepos {
+		log.Info().Msgf("running for %s...", vcs)
+		for _, repo := range repos.Repos {
+			repo.Auth.Fill(&repos.Auth)
+			if repo.WorkingDir == "" {
+				repo.WorkingDir = repos.WorkingDir
+			}
+			dorepo(repo)
 		}
-		if repo.Repo == "" {
-			repo.Repo = fmt.Sprintf("ID %d", repo.ID)
-		}
-		dorepo(repo, config.Gitlab.Token, "gitlab")
-	}
-	for _, repo := range config.Gitea.Repos {
-		if repo.URL == "" {
-			repo.URL = config.Gitea.URL
-		}
-		dorepo(repo, config.Gitea.Token, "gitea")
-	}
-	for _, repo := range config.Gogs.Repos {
-		dorepo(repo, config.Gogs.Token, "gogs")
 	}
 }

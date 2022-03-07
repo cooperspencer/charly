@@ -20,8 +20,11 @@ func RunScript(repo types.Repo, repos types.Repos) error {
 	os.Setenv("COMMIT", repo.Commit)
 	os.Setenv("BRANCH", repo.Branch)
 	os.Setenv("URL", repo.Url)
-	os.Setenv("SSHURL", repo.SshUrl)
-	os.Setenv("USER", repo.User)
+	os.Setenv("TOKEN", repos.Auth.Token)
+	os.Setenv("GIT_PWD", repos.Auth.Password)
+	os.Setenv("SSHKEYFILE", repos.Auth.SSHKeyfile)
+	os.Setenv("SSHKEYPWD", repos.Auth.SSHKeyPassword)
+	os.Setenv("USERNAME", repo.User)
 	os.Setenv("REPO", repo.Name)
 
 	f, err := ioutil.TempFile("", fmt.Sprintf("charly-%d.sh", time.Now().Unix()))

@@ -2,49 +2,21 @@ configuration:
   cron: # cron to run charly. if this option is empty, it will run just once
   db-file: # the database file, default: charly.db
 
-github:
-  token: # github token
+whatever:
+  working-dir: # where to run your script
+  auth:
+    token: # token of your code system
+    ssh-keyfile: # ssh keyfile, if not set it will use the default one in your home directory
+    ssh-key-password: # password for your keyfile, just leave it empty if you didn't encrypt it
+    username: # your username of the code system
+    password: # your password for the username
   repos:
-    - user: # owner of the repository
-      repo: # the repositories' name
-      token: # if you need a different token than the global one
-      branch: # if you want to monitor a
-      working-dir: # where to run your script
+    - url: # url to your repo. you can use ssh, http, https and local
+      branch: # if you want to monitor a branch
+      working-dir: # where to run your script, if empty the working-dir from the parent will be used
+      auth: # same as above, if anything is empty, the value from the parent will be used
       script: # add your script here. if it has more lines use |+
       variables: # you can set additional variables for the script
 
-gitlab:
-  url: # default url for gitlab. if not set, the official gitlab instance is used
-  token: # gitlab token
-  repos:
-    - id: # the id of the project
-      repo: # the repositories' name. if not set, it uses the id as name
-      token: # if you need a different token than the global one
-      branch: # if you want to monitor a
-      working-dir: # where to run your script
-      script: # add your script here. if it has more lines use |+
-      variables: # you can set additional variables for the script
-
-gitea:
-  url: # default url for gitea. if not set, the official gitlab instance is used
-  token: # gitea token
-  repos:
-    - user: # owner of the repository
-      repo: # the repositories' name
-      token: # if you need a different token than the global one
-      branch: # if you want to monitor a
-      working-dir: # where to run your script
-      script: # add your script here. if it has more lines use |+
-      variables: # you can set additional variables for the script
-
-gogs:
-  url: # default url for gogs.
-  token: # gogs token
-  repos:
-    - user: # owner of the repository
-      repo: # the repositories' name
-      token: # if you need a different token than the global one
-      branch: # if you want to monitor a
-      working-dir: # where to run your script
-      script: # add your script here. if it has more lines use |+
-      variables: # you can set additional variables for the script
+something-else:
+  # define as many repositories as you want
