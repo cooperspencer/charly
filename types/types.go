@@ -10,6 +10,23 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type Repos struct {
+	URL        string            `yaml:"url"`
+	Auth       Auth              `yaml:"auth"`
+	Branch     string            `yaml:"branch"`
+	WorkingDir string            `yaml:"working-dir"`
+	Script     string            `yaml:"script"`
+	Variables  map[string]string `yaml:"variables"`
+}
+
+type Auth struct {
+	SSHKeyfile     string `yaml:"ssh-keyfile"`
+	SSHKeyPassword string `yaml:"ssh-key-password"`
+	Token          string `yaml:"token"`
+	Username       string `yaml:"username"`
+	Password       string `yaml:"password"`
+}
+
 type Repo struct {
 	ID     int
 	Name   string
@@ -25,28 +42,33 @@ type Config struct {
 		DBFile string `yaml:"db-file"`
 		Cron   string `yaml:"cron"`
 	} `yaml:"configuration"`
-	Github VCS `yaml:"github"`
-	Gitlab VCS `yaml:"gitlab"`
-	Gitea  VCS `yaml:"gitea"`
-	Gogs   VCS `yaml:"gogs"`
+	VCSRepos `yaml:",inline"`
 }
 
-type Repos struct {
-	ID         int               `yaml:"id"`
-	URL        string            `yaml:"url"`
-	User       string            `yaml:"user"`
-	Repo       string            `yaml:"repo"`
-	Token      string            `yaml:"token"`
-	Branch     string            `yaml:"branch"`
-	WorkingDir string            `yaml:"working-dir"`
-	Script     string            `yaml:"script"`
-	Variables  map[string]string `yaml:"variables"`
-}
+type VCSRepos map[string]VCS
 
 type VCS struct {
-	Token string  `yaml:"token"`
-	URL   string  `yaml:"url"`
-	Repos []Repos `yaml:"repos"`
+	Auth       Auth    `yaml:"auth"`
+	WorkingDir string  `yaml:"working-dir"`
+	Repos      []Repos `yaml:"repos"`
+}
+
+func (a *Auth) Fill(auth *Auth) {
+	if a.Username == "" {
+		a.Username = auth.Username
+	}
+	if a.Password == "" {
+		a.Password = auth.Password
+	}
+	if a.Token == "" {
+		a.Token = auth.Token
+	}
+	if a.SSHKeyfile == "" {
+		a.SSHKeyfile = a.SSHKeyfile
+	}
+	if a.SSHKeyPassword == "" {
+		a.SSHKeyPassword = auth.SSHKeyPassword
+	}
 }
 
 func (c *Config) Get(path string) error {
