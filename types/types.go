@@ -15,8 +15,13 @@ type Repos struct {
 	Auth       Auth              `yaml:"auth"`
 	Branch     string            `yaml:"branch"`
 	WorkingDir string            `yaml:"working-dir"`
-	Script     string            `yaml:"script"`
+	Script     Script            `yaml:"script"`
 	Variables  map[string]string `yaml:"variables"`
+}
+
+type Script struct {
+	Code     string `yaml:"code"`
+	Template string `yaml:"template"`
 }
 
 type Auth struct {
@@ -42,8 +47,11 @@ type Config struct {
 		DBFile string `yaml:"db-file"`
 		Cron   string `yaml:"cron"`
 	} `yaml:"configuration"`
+	Scripts  map[string]string `yaml:"scripts"`
 	VCSRepos `yaml:",inline"`
 }
+
+type TemplateScripts map[string]string
 
 type VCSRepos map[string]VCS
 

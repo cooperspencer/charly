@@ -32,7 +32,7 @@ func RunScript(repo types.Repo, repos types.Repos) error {
 	if err != nil {
 		return err
 	}
-	_, err = f.WriteString(repos.Script)
+	_, err = f.WriteString(repos.Script.Code)
 	if err != nil {
 		return err
 	}

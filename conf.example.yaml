@@ -2,6 +2,15 @@ configuration:
   cron: # cron to run charly. if this option is empty, it will run just once
   db-file: # the database file, default: charly.db
 
+scripts:
+  scriptname: |+ # can be whatever name you want
+    if [ -d "$REPO" ]; then
+      cd $REPO
+      git pull origin $BRANCH
+    else
+      git clone $URL
+    fi
+
 whatever:
   working-dir: # where to run your script
   auth:
@@ -15,7 +24,10 @@ whatever:
       branch: # if you want to monitor a branch
       working-dir: # where to run your script, if empty the working-dir from the parent will be used
       auth: # same as above, if anything is empty, the value from the parent will be used
-      script: # add your script here. if it has more lines use |+
+      script:
+        code: # add your script here. if it has more lines use |+
+        template: # you can just use the template name from the scripts value
+        # if code and template are set, it uses the value in script, but you get a warning message
       variables: # you can set additional variables for the script
 
 something-else:

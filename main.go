@@ -81,7 +81,7 @@ func dorepo(repo types.Repos) {
 
 	if dbrepo.Commit != re.Commit {
 		log.Info().Str("branch", re.Branch).Msgf("%s was updated", re.Name)
-		if repo.Script != "" {
+		if repo.Script.Code != "" {
 			log.Info().Str("branch", re.Branch).Msgf("run script for %s", re.Name)
 			err = scripts.RunScript(re, repo)
 			if err != nil {
@@ -168,6 +168,13 @@ func RunRepos(config types.Config) {
 			repo.Auth.Fill(&repos.Auth)
 			if repo.WorkingDir == "" {
 				repo.WorkingDir = repos.WorkingDir
+			}
+			if repo.Script.Template != "" {
+				if repo.Script.Code == "" {
+					repo.Script.Code = config.Scripts[repo.Script.Template]
+				} else {
+					log.Warn().Msg("values are set in template and code! will use the value from code!")
+				}
 			}
 			dorepo(repo)
 		}
