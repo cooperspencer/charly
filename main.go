@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -37,24 +38,7 @@ func getName(location string) string {
 	}
 }
 
-func dorepo(repo types.Repos) {
-	log.Info().Str("url", repo.URL).Msg("checking for updates...")
-	re := types.Repo{}
-	data, err := git.GetRepo(repo)
-	if err != nil {
-		log.Error().Str("url", repo.URL).Msg(err.Error())
-		return
-	}
-	if repo.Branch == "" {
-		log.Info().Str("url", repo.URL).Msg("checking for default branch...")
-		for _, d := range data {
-			if d.Hash().IsZero() {
-				repo.Branch = d.Target().Short()
-				log.Debug().Str("url", repo.URL).Msgf("default branch is %s...", repo.Branch)
-				break
-			}
-		}
-	}
+func checkrepo(repo types.Repos, re types.Repo, data []*plumbing.Reference) {
 	log.Debug().Str("url", repo.URL).Str("branch", repo.Branch).Msg("gathering info for the repo...")
 	for _, d := range data {
 		if d.Name().Short() == repo.Branch {
@@ -93,6 +77,42 @@ func dorepo(repo types.Repos) {
 			log.Fatal().Str("branch", re.Branch).Err(err)
 		}
 	}
+}
+
+func dorepo(repo types.Repos) {
+	log.Info().Str("url", repo.URL).Msg("checking for updates...")
+	re := types.Repo{}
+	data, err := git.GetRepo(repo)
+	if err != nil {
+		log.Error().Str("url", repo.URL).Msg(err.Error())
+		return
+	}
+	if repo.Branch == "" {
+		if repo.AllBranches {
+			log.Info().Str("url", repo.URL).Msg("checking all branches...")
+		} else {
+			log.Info().Str("url", repo.URL).Msg("checking for default branch...")
+		}
+		for _, d := range data {
+			if repo.AllBranches {
+				if d.Name().IsBranch() {
+					fmt.Println(d.Name().Short())
+					repo.Branch = d.Name().Short()
+					log.Debug().Str("url", repo.URL).Msgf("branch is %s...", repo.Branch)
+					checkrepo(repo, re, data)
+				}
+			} else {
+				if d.Hash().IsZero() {
+					repo.Branch = d.Target().Short()
+					log.Debug().Msgf("branch is %s", repo.Branch)
+					log.Debug().Str("url", repo.URL).Msgf("default branch is %s...", repo.Branch)
+					checkrepo(repo, re, data)
+					break
+				}
+			}
+		}
+	}
+
 }
 
 func logNextRun(conf *types.Config) {

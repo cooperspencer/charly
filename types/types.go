@@ -2,21 +2,23 @@ package types
 
 import (
 	"fmt"
-	"github.com/robfig/cron/v3"
-	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"time"
+
+	"github.com/robfig/cron/v3"
+	"github.com/rs/zerolog/log"
 
 	"gopkg.in/yaml.v3"
 )
 
 type Repos struct {
-	URL        string            `yaml:"url"`
-	Auth       Auth              `yaml:"auth"`
-	Branch     string            `yaml:"branch"`
-	WorkingDir string            `yaml:"working-dir"`
-	Script     Script            `yaml:"script"`
-	Variables  map[string]string `yaml:"variables"`
+	URL         string            `yaml:"url"`
+	Auth        Auth              `yaml:"auth"`
+	Branch      string            `yaml:"branch"`
+	AllBranches bool              `yaml:"allbranches"`
+	WorkingDir  string            `yaml:"working-dir"`
+	Script      Script            `yaml:"script"`
+	Variables   map[string]string `yaml:"variables"`
 }
 
 type Script struct {

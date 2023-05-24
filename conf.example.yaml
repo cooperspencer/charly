@@ -24,6 +24,7 @@ whatever:
       branch: # if you want to monitor a branch
       working-dir: # where to run your script, if empty the working-dir from the parent will be used
       auth: # same as above, if anything is empty, the value from the parent will be used
+      allbranches: true # check for changes on all branches
       script:
         code: # add your script here. if it has more lines use |+
         template: # you can just use the template name from the scripts value
