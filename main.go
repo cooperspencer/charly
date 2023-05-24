@@ -22,7 +22,7 @@ var (
 	configfile = kingpin.Arg("configfile", "the configuration file").Default("conf.yaml").String()
 	exPath     string
 	d          db.DB
-	version    = "0.0.1"
+	version    = "0.0.2"
 )
 
 func getName(location string) string {
